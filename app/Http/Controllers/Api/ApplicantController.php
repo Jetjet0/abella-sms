@@ -3,48 +3,77 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Applicant; // make sure this model exists
+use App\Models\Applicant;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ApplicantController extends Controller
 {
-    // Get all applicants
-    public function index()
+    // GET /api/applicants
+    public function index(): JsonResponse
     {
-        $applicants = Applicant::all();
-        return response()->json($applicants);
+        return response()->json(Applicant::all());
     }
 
-    // Get single applicant
-    public function show($id)
+    // GET /api/applicants/{id}
+    public function show($id): JsonResponse
     {
         $applicant = Applicant::find($id);
 
         if (!$applicant) {
-            return response()->json(['message' => 'Applicant not found'], 404);
+            return response()->json(['message' => 'Applicant not found.'], 404);
         }
 
         return response()->json($applicant);
     }
-    public function store(Request $request)
-{
-    // Validate the incoming request data
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:applicants,email',
-        // Add other validation rules for applicant data
-    ]);
 
-    // Create a new applicant using the validated data
-    $applicant = Applicant::create([
-        'name' => $request->input('name'),
-        'email' => $request->input('email'),
-        // Add other fields as needed
-    ]);
+    // POST /api/applicants
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name'   => 'required|string|max:255',
+            'email'  => 'required|email|unique:applicants,email',
+            'phone'  => 'nullable|string|max:20',
+            'course' => 'required|string|max:255',
+        ]);
 
-    // Return the created applicant as a JSON response
-    return response()->json($applicant, 201);
-}
+        $applicant = Applicant::create($validated);
 
-    // Add more methods as needed (store, update, delete)
+        return response()->json($applicant, 201);
+    }
+
+    // PUT/PATCH /api/applicants/{id}
+    public function update(Request $request, $id): JsonResponse
+    {
+        $applicant = Applicant::find($id);
+
+        if (!$applicant) {
+            return response()->json(['message' => 'Applicant not found.'], 404);
+        }
+
+        $validated = $request->validate([
+            'name'   => 'sometimes|string|max:255',
+            'email'  => 'sometimes|email|unique:applicants,email,' . $id,
+            'phone'  => 'nullable|string|max:20',
+            'course' => 'sometimes|string|max:255',
+        ]);
+
+        $applicant->update($validated);
+
+        return response()->json($applicant->fresh());
+    }
+
+    // DELETE /api/applicants/{id}
+    public function destroy($id): JsonResponse
+    {
+        $applicant = Applicant::find($id);
+
+        if (!$applicant) {
+            return response()->json(['message' => 'Applicant not found.'], 404);
+        }
+
+        $applicant->delete();
+
+        return response()->json(['message' => 'Applicant deleted successfully.']);
+    }
 }
