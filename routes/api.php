@@ -1,45 +1,34 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ApplicantController;
+use App\Http\Controllers\Api\StudentController;
+use App\Http\Controllers\Api\ScholarshipController;
+use App\Http\Controllers\Api\ApplicationController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\StudentController;
-use App\Http\Controllers\ScholarshipController;
-use App\Http\Controllers\ApplicationController;
 
-// Public route: login
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login',    [AuthController::class, 'login']);
 
-// Protected routes (require login)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me',      [AuthController::class, 'me']);
+    });
+});
+
 Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('students',     StudentController::class);
+    Route::apiResource('scholarships', ScholarshipController::class);
 
-    // Logout
-    Route::post('/logout', [AuthController::class, 'logout']);
-
-    // Student CRUD
-    Route::get('/students', [StudentController::class, 'index']);
-    Route::post('/students', [StudentController::class, 'store']);
-    Route::put('/students/{id}', [StudentController::class, 'update']);
-    Route::delete('/students/{id}', [StudentController::class, 'destroy']);
-    
-    // User CRUD
-    Route::get('/users', [UserController::class, 'index']);       // Get all users
-    Route::post('/users', [UserController::class, 'store']);      // Add user
-    Route::put('/users/{id}', [UserController::class, 'update']); // Edit user
-    Route::delete('/users/{id}', [UserController::class, 'destroy']); // Delete user
-
-    // Scholarship CRUD
-    Route::get('/scholarships', [ScholarshipController::class, 'index']);
-    Route::post('/scholarships', [ScholarshipController::class, 'store']);
-    Route::put('/scholarships/{id}', [ScholarshipController::class, 'update']);
-    Route::delete('/scholarships/{id}', [ScholarshipController::class, 'destroy']);
-
-    // Application CRUD
-    Route::get('/applications', [ApplicationController::class, 'index']);
-    Route::post('/applications', [ApplicationController::class, 'store']);
-    Route::put('/applications/{id}', [ApplicationController::class, 'update']);
-    Route::delete('/applications/{id}', [ApplicationController::class, 'destroy']);
-
+    Route::get('/applications',                         [ApplicationController::class, 'index']);
+    Route::post('/applications',                        [ApplicationController::class, 'store']);
+    Route::get('/applications/{application}',           [ApplicationController::class, 'show']);
+    Route::patch('/applications/{application}/approve', [ApplicationController::class, 'approve']);
+    Route::patch('/applications/{application}/reject',  [ApplicationController::class, 'reject']);
+    Route::get('applicants', [App\Http\Controllers\Api\ApplicantController::class, 'index']);
+    Route::post('applicants', [ApplicantController::class, 'store']);
+    Route::get('applicants/{id}', [App\Http\Controllers\Api\ApplicantController::class, 'show']);
+    Route::post('applicants', [ApplicantController::class, 'store']);
     
 });
